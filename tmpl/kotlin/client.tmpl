@@ -22,7 +22,7 @@ import java.lang.reflect.Type
  */
 class ApiClient {
 
-    suspend fun <V : Any> get(path: String, retType: Type, params: Map<String, Any>? = emptyMap()): Result<V> {
+    suspend fun <V : Any> get(path: String, retType: Type, params: Map<String, Any?>? = emptyMap()): Result<V> {
         return toResult(defaultClient.get(path, params), retType)
     }
 
@@ -59,7 +59,7 @@ private var defaultClient =
 interface RetrofitClient {
 
     @GET
-    suspend fun get(@Url path: String, @QueryMap(encoded = true) params: Map<String, @JvmSuppressWildcards Any>?): Response<ResponseBody>
+    suspend fun get(@Url path: String, @QueryMap(encoded = true) params: Map<String, @JvmSuppressWildcards Any?>?): Response<ResponseBody>
 
     @POST
     suspend fun post(@Url path: String, @Body params: RequestBody?): Response<ResponseBody>
