@@ -5,61 +5,92 @@
 import Alamofire
 import Foundation
 
+
+
+
 /**
  * TODO You need to implement the current protocol, which can refer to Alamofire or URLSession
  */
 protocol ApiClient {
-    func get<T: Codable>(_ path: String, _ params: Any?, _ resultType: T.Type) async throws -> T
+    func get<T: Codable>(_ path: String, _ params: [String: Any], _ resultType: T.Type) async throws -> T
 
-    func post<T: Codable>(_ path: String, _ params: Any?, _ resultType: T.Type) async throws -> T
+    func post<T: Codable>(_ path: String, _ params: Codable, _ resultType: T.Type) async throws -> T
 
-    func put<T: Codable>(_ path: String, _ params: Any?, _ resultType: T.Type) async throws -> T
+    func put<T: Codable>(_ path: String, _ params: Codable, _ resultType: T.Type) async throws -> T
 
-    func delete<T: Codable>(_ path: String, _ params: Any?, _ resultType: T.Type) async throws -> T
+    func delete<T: Codable>(_ path: String, _ params: Codable, _ resultType: T.Type) async throws -> T
 }
 
-var BASE_URL = "{{.Env.Endpoint}}"
 
-struct AlamofireApiClient: ApiClient {
-    var headers: HTTPHeaders?
+// 创建一个自定义的日志记录器
+class AlamofireLogger: EventMonitor {
 
-    func get<T>(_ path: String, _ params: Any?, _ resultType: T.Type) async throws -> T where T: Decodable, T: Encodable {
-        let reqParams: Parameters? = params as? [String: Any]
-        return try await AF.request("\(BASE_URL)\(path)",
-                                    method: .get,
-                                    parameters: reqParams,
-                                    encoding: URLEncoding.default,
-                                    headers: headers)
+    // 监听请求发起
+    func requestDidResume(_ request: Request) {
+        print("⚡️ 请求开始: \(request.description)")
+    }
+
+    // 监听任务完成
+    func request<Value>(_ request: DataRequest, didParseResponse response: DataResponse<Value, AFError>) {
+
+
+        print("✅ 请求完成: \(request.description) \(request.request?.headers)")
+
+        // 打印响应数据
+        if let data = response.data, let str = String(data: data, encoding: .utf8) {
+            print("📩 响应数据: \(str)")
+        }
+
+        // 打印错误
+        if let error = response.error {
+            print("❌ 请求错误: \(error)")
+        }
+    }
+}
+
+var headers: HTTPHeaders? = []
+
+struct AlamofireClient: ApiClient {
+
+    var BASE_URL = "{{.Env.Endpoint}}"
+
+    var session = Session(eventMonitors: [AlamofireLogger()])
+
+    func get<T>(_ path: String, _ params: [String: Any], _ resultType: T.Type) async throws -> T where T: Decodable, T: Encodable {
+        var requiredParams = params.compactMapValues { $0 }
+
+        return try await session.request("\(BASE_URL)\(path)",
+                                         method: .get,
+                                         parameters: requiredParams,
+                                         encoding: URLEncoding.default,
+                                         headers: headers)
             .serializingDecodable(resultType.self).value
     }
 
-    func post<T>(_ path: String, _ params: Any?, _ resultType: T.Type) async throws -> T where T: Decodable, T: Encodable {
-        let reqParams: Parameters? = params as? Dictionary<String, any Sendable>
-        return try await AF.request("\(BASE_URL)\(path)",
-                                    method: .post,
-                                    parameters: reqParams,
-                                    encoding: JSONEncoding.default,
-                                    headers: headers)
+    func post<T>(_ path: String, _ params: Codable, _ resultType: T.Type) async throws -> T where T: Decodable, T: Encodable {
+        return try await session.request("\(BASE_URL)\(path)",
+                                         method: .post,
+                                         parameters: params,
+                                         encoder: JSONParameterEncoder.default,
+                                         headers: headers)
             .serializingDecodable(resultType.self).value
     }
 
-    func put<T>(_ path: String, _ params: Any?, _ resultType: T.Type) async throws -> T where T: Decodable, T: Encodable {
-        let reqParams: Parameters? = params as? Dictionary<String, any Sendable>
-        return try await AF.request("\(BASE_URL)\(path)",
-                                    method: .put,
-                                    parameters: reqParams,
-                                    encoding: JSONEncoding.default,
-                                    headers: headers)
+    func put<T>(_ path: String, _ params: Codable, _ resultType: T.Type) async throws -> T where T: Decodable, T: Encodable {
+        return try await session.request("\(BASE_URL)\(path)",
+                                         method: .put,
+                                         parameters: params,
+                                         encoder: JSONParameterEncoder.default,
+                                         headers: headers)
             .serializingDecodable(resultType.self).value
     }
 
-    func delete<T>(_ path: String, _ params: Any?, _ resultType: T.Type) async throws -> T where T: Decodable, T: Encodable {
-        let reqParams: Parameters? = params as? Dictionary<String, any Sendable>
-        return try await AF.request("\(BASE_URL)\(path)",
-                                    method: .delete,
-                                    parameters: reqParams,
-                                    encoding: JSONEncoding.default,
-                                    headers: headers)
+    func delete<T>(_ path: String, _ params: Codable, _ resultType: T.Type) async throws -> T where T: Decodable, T: Encodable {
+        return try await session.request("\(BASE_URL)\(path)",
+                                         method: .delete,
+                                         parameters: params,
+                                         encoder: JSONParameterEncoder.default,
+                                         headers: headers)
             .serializingDecodable(resultType.self).value
     }
 }

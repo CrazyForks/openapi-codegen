@@ -18,12 +18,12 @@
 	 */
     func {{.Name}}({{template "parameters" .}}) async throws -> {{.Response.Expression}} {
         {{if .Queries}}
-        var params: [String: Any?] = [:]
+        var params: [String: Any] = [:]
         {{range $idx,$val := .Queries -}}
         params["{{$val.Name}}"] = {{$val.Alias}}
         {{end -}}
         {{- else -}}
-        {{if .Request}}{{else}}var params: [String: Any?] = [:]{{end}}
+        {{if .Request}}{{else}}let params: [String: String] = [:]{{end}}
         {{- end}}
         return try await client.{{.Method}}({{.Path}}, {{- if .Request}}body{{else}}params{{end}} ,{{.Response.Expression}}.self)
     }

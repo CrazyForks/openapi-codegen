@@ -8,7 +8,7 @@
  */
 export interface {{.Type.Expression}} {
 	{{range $val :=.Properties -}}
-	//{{$val.Description}}
+	/**{{$val.Description}}*/
 	{{- if $val.Enums -}}// Enums: {{$val.Enums}} {{- end}}
 	{{$val.Alias}}?: {{$val.Type.Expression}}
 	{{end}}

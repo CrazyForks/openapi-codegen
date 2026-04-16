@@ -4,7 +4,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-const version = "1.0.4"
+const version = "1.0.6"
 
 var rootCmd = &cobra.Command{
 	Use:     "openapi",
